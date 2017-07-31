@@ -60,7 +60,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>io.vrajat.nomadacris.Nomadacris</mainClass>
+                            <mainClass>com.github.vrajat.nomadacris.Nomadacris</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

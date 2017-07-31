@@ -1,8 +1,8 @@
-package io.vrajat.nomadacris.examples;
+package com.github.vrajat.nomadacris.examples;
 
+import com.github.vrajat.nomadacris.Task;
+import com.github.vrajat.nomadacris.TaskList;
 import com.google.common.collect.ImmutableList;
-import io.vrajat.nomadacris.Task;
-import io.vrajat.nomadacris.TaskList;
 
 import java.util.ArrayList;
 import java.util.List;

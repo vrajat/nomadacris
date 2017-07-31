@@ -26,7 +26,7 @@ Run Example
 
     mvn clean package
     java -jar target/nomadacris-1.0-SNAPSHOT.jar -m 127.0.0.1 -p 5557 \
-         --taskList io.vrajat.nomadacris.examples.Fibonacci
+         --taskList com.github.vrajat.nomadacris.examples.Fibonacci
          
  ## Create your own test
  

@@ -1,4 +1,4 @@
-package io.vrajat.nomadacris;
+package com.github.vrajat.nomadacris;
 
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;

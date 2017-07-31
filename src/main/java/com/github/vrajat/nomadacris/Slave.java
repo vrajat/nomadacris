@@ -1,4 +1,4 @@
-package io.vrajat.nomadacris;
+package com.github.vrajat.nomadacris;
 
 import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;

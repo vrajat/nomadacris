@@ -1,4 +1,4 @@
-package io.vrajat.nomadacris;
+package com.github.vrajat.nomadacris;
 
 
 import org.msgpack.core.MessageBufferPacker;
