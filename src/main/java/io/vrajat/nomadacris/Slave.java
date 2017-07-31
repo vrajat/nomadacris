@@ -6,8 +6,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * Created by rvenkatesh on 7/28/17.
@@ -36,21 +34,25 @@ public class Slave {
   }
 
   private State state;
-  private ExecutorService workers;
+  private TaskRunner taskRunner;
+  private String className;
 
-  Slave(Client client) {
+  Slave(Client client, String className) {
     this.client = client;
     this.state = State.STATE_INIT;
+    this.className = className;
   }
 
-  void run() throws IOException {
+  void run() throws
+      IOException, ClassNotFoundException, IllegalAccessException, InstantiationException {
     Runtime.getRuntime().addShutdownHook(new Quitter());
 
     this.client.write(Message.clientReady);
+    log.info("I am ready!");
     while (true) {
       Message message;
       try {
-        message = this.client.get();
+        message = this.client.read();
       } catch (EOFException e) {
         log.warn("Connection closed by server");
         return;
@@ -67,32 +69,29 @@ public class Slave {
           this.client.write(Message.clientReady);
           break;
         case quit:
+          this.stop();
           return;
       }
     }
   }
 
-  private void hatch(Message hatch) throws IOException {
+  private void hatch(Message hatch) throws
+      IOException, ClassNotFoundException, IllegalAccessException, InstantiationException {
     this.state = State.STATE_HATCHING;
     this.client.write(Message.hatching);
 
-    int numClients = (Integer) hatch.data.get("num_clients");
-    workers = Executors.newFixedThreadPool(numClients);
-
-    workers.execute(new Runnable() {
-      public void run() {
-        System.out.println("Asynchronous task");
-      }
-    });
+    Integer numClients = (Integer) hatch.data.get("num_clients");
+    taskRunner = new TaskRunner(this.className, numClients, this.client);
 
     this.client.write(new Message("hatch_complete", "Java Slave",
-        ImmutableMap.of("count", (Object) new Integer(numClients))));
+        ImmutableMap.of("count", (Object) numClients)));
+
+    taskRunner.start();
   }
 
   private void stop() throws IOException {
     if (this.state == State.STATE_RUNNING) {
-      workers.shutdown();
-      //TODO stop thread pool
+      taskRunner.shutdown();
       this.state =State.STATE_STOPPED;
       this.client.write(Message.clientStopped);
     }

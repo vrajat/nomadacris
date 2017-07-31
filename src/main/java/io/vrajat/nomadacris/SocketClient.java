@@ -10,7 +10,6 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.Map;
 
 /**
  * Created by rvenkatesh on 7/28/17.
@@ -31,7 +30,7 @@ public class SocketClient implements Client {
     this.dataOutputStream = new DataOutputStream(this.socket.getOutputStream());
   }
 
-  public Message get() throws IOException {
+  public Message read() throws IOException {
     int length = this.dataInputStream.readInt();
     log.info("Message size is " + length);
     int rlen = 0;
@@ -47,8 +46,10 @@ public class SocketClient implements Client {
 
   public void write(Message message) throws IOException{
     MessageBufferPacker packer = MessagePack.newDefaultBufferPacker();
+    log.info("Packing will begin");
     message.write(packer);
     byte [] bytes = packer.toByteArray();
+    log.info("Packer has packed message: " + bytes.length);
     dataOutputStream.writeInt(bytes.length);
     dataOutputStream.write(bytes);
     dataOutputStream.flush();

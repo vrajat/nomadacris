@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -19,11 +20,12 @@ class Message {
 
   public enum TypeEnum {
     client_ready,
+    client_stopped,
     hatching,
     hatch_complete,
     hatch,
+    stats,
     stop,
-    client_stopped,
     quit
   }
 
@@ -106,26 +108,14 @@ class Message {
   }
 
   void write(MessagePacker packer) throws IOException {
+    Visitor visitor = new Visitor(packer);
     packer.packArrayHeader(3);
     packer.packString(this.type);
     if (this.data != null) {
       packer.packMapHeader(this.data.size());
       for (Map.Entry<String, Object> entry : this.data.entrySet()) {
         packer.packString(entry.getKey());
-        Object value = entry.getValue();
-        if (value == null) {
-          packer.packNil();
-        } else if (value instanceof String) {
-          packer.packString((String) value);
-        } else if (value instanceof Integer) {
-          packer.packInt((Integer) value);
-        } else if (value instanceof Boolean) {
-          packer.packBoolean((Boolean) value);
-        } else if (value instanceof Float) {
-          packer.packFloat((Float) value);
-        } else {
-          throw new IOException("Cannot pack type for" + entry.getKey());
-        }
+        visitor.visit(entry.getValue());
       }
     } else {
       packer.packNil();
@@ -133,5 +123,96 @@ class Message {
     packer.packString(this.nodeId);
     packer.close();
 
+  }
+
+  class Visitor {
+    final MessagePacker messagePacker;
+
+    Visitor(MessagePacker messagePacker) {
+      this.messagePacker = messagePacker;
+    }
+
+    void visit(Object value) throws IOException {
+      if (value == null) {
+        visitNull(value);
+      } else if (value instanceof String) {
+        visitString(value);
+      } else if (value instanceof Integer) {
+        visitInt(value);
+      } else if (value instanceof Long) {
+        visitLong(value);
+      } else if (value instanceof Boolean) {
+        visitBool(value);
+      } else if (value instanceof Float) {
+        visitFloat(value);
+      } else if (value instanceof Double) {
+        visitDouble(value);
+      } else if (value instanceof Map) {
+        visitMap(value);
+      } else if (value instanceof List) {
+        visitList(value);
+      } else if (value instanceof Task.LongIntMap) {
+        visitRps(value);
+      } else {
+        throw new IOException("Cannot pack type unknown type:" + value.getClass().getSimpleName());
+      }
+    }
+
+    void visitNull(Object value) throws IOException {
+      this.messagePacker.packNil();
+    }
+
+    void visitString(Object value) throws IOException {
+      messagePacker.packString((String) value);
+    }
+
+    void visitInt(Object value) throws IOException {
+      messagePacker.packInt((Integer) value);
+    }
+
+    void visitLong(Object value) throws IOException {
+      messagePacker.packInt(((Long)value).intValue());
+    }
+
+    void visitBool(Object value) throws IOException {
+      messagePacker.packBoolean((Boolean) value);
+    }
+
+    void visitFloat(Object value) throws IOException {
+      messagePacker.packFloat((Float) value);
+    }
+
+    void visitDouble(Object value) throws IOException {
+      messagePacker.packFloat(((Double) value).floatValue());
+    }
+
+    void visitMap(Object value) throws IOException {
+      Map<String, Object> map = (Map<String, Object>) value;
+      messagePacker.packMapHeader(map.size());
+
+      for (Map.Entry entry : map.entrySet()) {
+        this.visitString(entry.getKey());
+        this.visit(entry.getValue());
+      }
+    }
+
+    void visitList(Object value) throws IOException {
+      List<Object> list = (List<Object>) value;
+      messagePacker.packArrayHeader(list.size());
+
+      for (Object object : list) {
+        this.visit(object);
+      }
+    }
+
+    void visitRps(Object value) throws IOException {
+      Task.LongIntMap longIntMap = (Task.LongIntMap) value;
+      messagePacker.packMapHeader(longIntMap.longIntegerMap.size());
+
+      for (Map.Entry entry : longIntMap.longIntegerMap.entrySet()) {
+        messagePacker.packLong((long)entry.getKey());
+        messagePacker.packInt((int)entry.getValue());
+      }
+    }
   }
 }

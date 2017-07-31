@@ -29,15 +29,20 @@ public class Nomadacris {
         .type(Integer.class)
         .help("Port of Master");
 
+    parser.addArgument("-t", "--taskList")
+        .required(true)
+        .help("Name of TaskSet Class. Class should be in classpath");
+
     Namespace ns;
     try {
       ns = parser.parseArgs(args);
-      Slave slave = new Slave(new SocketClient(ns.getString("master"), ns.getInt("port")));
+      Slave slave = new Slave(new SocketClient(ns.getString("master"), ns.getInt("port")),
+          ns.getString("taskList"));
       slave.run();
     } catch (ArgumentParserException e) {
       parser.handleError(e);
       System.exit(1);
-    } catch (IOException e) {
+    } catch (IOException | ClassNotFoundException | IllegalAccessException | InstantiationException e) {
       System.err.println(e.getMessage());
       System.exit(1);
     }
