@@ -47,20 +47,7 @@ public class SocketClient implements Client {
 
   public void write(Message message) throws IOException{
     MessageBufferPacker packer = MessagePack.newDefaultBufferPacker();
-    packer.packArrayHeader(3);
-    packer.packString(message.type);
-    if (message.data != null) {
-      packer.packMapHeader(message.data.size());
-      for (Map.Entry<String, String> entry : message.data.entrySet()) {
-        packer.packString(entry.getKey());
-        packer.packString(entry.getValue());
-      }
-    } else {
-      packer.packNil();
-    }
-    packer.packString(message.nodeId);
-    packer.close();
-
+    message.write(packer);
     byte [] bytes = packer.toByteArray();
     dataOutputStream.writeInt(bytes.length);
     dataOutputStream.write(bytes);
